@@ -9,5 +9,7 @@ namespace TasksAPI.Models.Entities
         public required string Password { get; set; }
         public required string Role { get; set; }
         public  List<Task>? Tasks { get; set; }
+        public List<Task>? CreatedTasks { get; set; }
+        public List<Task>? ModifiedTasks { get; set; }
     }
 }
