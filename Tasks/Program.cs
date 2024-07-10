@@ -76,7 +76,7 @@ namespace TasksAPI
                        ValidateLifetime = true,
                        ValidateIssuerSigningKey = true,
                        ValidIssuer = "Yousef Mandani",
-                       ValidAudience = "Dalal AlKandari",
+                       ValidAudience = "Lyla AlKandari",
                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
                    };
                });

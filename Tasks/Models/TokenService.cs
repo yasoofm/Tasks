@@ -45,7 +45,7 @@ namespace TasksAPI.Models
 
             var token = new JwtSecurityToken(
                 issuer: "Yousef Mandani",
-                audience: "Dalal AlKandari",
+                audience: "Lyla AlKandari",
                 claims: claims,
                 expires: DateTime.Now.AddHours(1),
                 signingCredentials: credentials);
