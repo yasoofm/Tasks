@@ -19,15 +19,15 @@ namespace TasksAPI.Models
             _dbContext = tasksDBContext;
         }
 
-        public (bool IsValid, LoginResponse? Resposne) GenerateToken(string username, string password)
+        public async Task<(bool IsValid, LoginResponse? Resposne)> GenerateToken(string username, string password)
         {
-            var user = _dbContext.Users.SingleOrDefault(x => x.Username == username);
+            var user = await _dbContext.Users.SingleOrDefaultAsync(x => x.Username == username);
             if (user == null)
             {
                 return (false, null);
             }
 
-            var validPassword = BCrypt.Net.BCrypt.Verify(password, user.Password);
+            var validPassword = BCrypt.Net.BCrypt.EnhancedVerify(password, user.Password);
             if (!validPassword)
             {
                 return (false, null);
@@ -38,8 +38,8 @@ namespace TasksAPI.Models
 
             var claims = new[]
             {
-                new Claim("username", user.Username),
-                new Claim("userId", user.Id.ToString()),
+                new Claim(Constants.UsernameClaim, user.Username),
+                new Claim(Constants.UserIdClaim, user.Id.ToString()),
                 new Claim(ClaimTypes.Role, user.Role),
             };
 
