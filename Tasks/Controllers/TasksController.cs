@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using TasksAPI.Models;
 using TasksAPI.Models.Entities;
 using TasksAPI.Models.Enums;
@@ -100,83 +101,146 @@ namespace TasksAPI.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<GetTaskResponse>> GetTask(int id)
         {
-            var task = await _dbContext.Tasks.Include(x => x.CreatedBy).Include(x => x.ModifiedBy).Include(x => x.User).Where(x => x.Id == id).FirstOrDefaultAsync();
-
-            if (task == null)
+            using(var dbContext = _dbContext)
             {
-                return NotFound("Task not found");
+                var task = await dbContext.Tasks
+                    .Include(x => x.CreatedBy)
+                    .Include(x => x.ModifiedBy)
+                    .Include(x => x.User)
+                    .Where(x => x.Id == id).FirstOrDefaultAsync();
+
+                if (task == null)
+                {
+                    return NotFound("Task not found");
+                }
+
+                return Ok(new GetTaskResponse
+                {
+                    AssignedTo = task.User.Username,
+                    CreatedBy = task.CreatedBy.Username,
+                    Id = task.Id,
+                    ModifiedBy = task.ModifiedBy.Username,
+                    Description = task.Description,
+                    Priority = task.Priority.ToString(),
+                    Status = task.Status.ToString(),
+                    Subject = task.Subject
+                });
             }
-
-            return Ok(new GetTaskResponse
-            {
-                AssignedTo = task.User.Username,
-                CreatedBy = task.CreatedBy.Username,
-                Id = task.Id,
-                ModifiedBy = task.ModifiedBy.Username,
-                Description = task.Description,
-                Priority = task.Priority.ToString(),
-                Status = task.Status.ToString(),
-                Subject = task.Subject
-            });
         }
 
-        //// GET: api/Tasks
-        //[HttpGet]
-        //public async Task<ActionResult<IEnumerable<Models.Entities.Task>>> GetTasks()
-        //{
-        //    return await _dbContext.Tasks.ToListAsync();
-        //}
+        // GET: api/Tasks
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<GetTaskResponse>>> GetTasks()
+        {
+            using (var dbContext = _dbContext)
+            {
+                var userIdClaim = User.FindFirst(Constants.UserIdClaim);
+                if(userIdClaim == null)
+                {
+                    return NotFound("User id not found");
+                }
 
-        //// PUT: api/Tasks/5
-        //// To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> PutTask(int id, Models.Entities.Task task)
-        //{
-        //    if (id != task.Id)
-        //    {
-        //        return BadRequest();
-        //    }
+                var userId = int.Parse(userIdClaim.Value);
+                var tasks = await dbContext.Tasks
+                    .Include(x => x.User)
+                    .Include(x => x.ModifiedBy)
+                    .Include(x => x.User)
+                    .Where(x => x.UserId == userId).Select(x => new GetTaskResponse
+                    {
+                        AssignedTo = x.User.Username,
+                        CreatedBy = x.CreatedBy.Username,
+                        Id = x.Id,
+                        ModifiedBy = x.ModifiedBy.Username,
+                        Priority = x.Priority.ToString(),
+                        Status = x.Status.ToString(),
+                        Subject = x.Subject,
+                        Description = x.Description
+                    }).ToListAsync();
 
-        //    _dbContext.Entry(task).State = EntityState.Modified;
+                return Ok(tasks);
+            }
+        }
 
-        //    try
-        //    {
-        //        await _dbContext.SaveChangesAsync();
-        //    }
-        //    catch (DbUpdateConcurrencyException)
-        //    {
-        //        if (!TaskExists(id))
-        //        {
-        //            return NotFound();
-        //        }
-        //        else
-        //        {
-        //            throw;
-        //        }
-        //    }
+        // PATCH: api/Tasks/5
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> PatchTask(int id, EditTaskRequest request)
+        {
+            using(var dbContext = _dbContext)
+            {
+                var task = await dbContext.Tasks.SingleOrDefaultAsync(x => x.Id == id);
+                if(task == null)
+                {
+                    return NotFound("Task not found");
+                }
 
-        //    return NoContent();
-        //}
+                var userIdClaim = User.FindFirst(Constants.UserIdClaim);
+                if (userIdClaim == null)
+                {
+                    return NotFound("Claim not found");
+                }
+                
+                var userId = int.Parse(userIdClaim.Value);
+                var modifier = await dbContext.Users.FindAsync(userId);
+                if(modifier == null)
+                {
+                    return NotFound("Modifier not found");
+                }
+                task.ModifiedBy = modifier;
+                task.ModifierId = modifier.Id;
 
-        //// DELETE: api/Tasks/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteTask(int id)
-        //{
-        //    var task = await _dbContext.Tasks.FindAsync(id);
-        //    if (task == null)
-        //    {
-        //        return NotFound();
-        //    }
+                if (request.Subject != null)
+                {
+                    task.Subject = request.Subject;
+                }
 
-        //    _dbContext.Tasks.Remove(task);
-        //    await _dbContext.SaveChangesAsync();
+                if(request.Description != null)
+                {
+                    task.Description = request.Description;
+                }
 
-        //    return NoContent();
-        //}
+                if(request.AssignedTo != null)
+                {
+                    var assignedTo = await dbContext.Users.SingleOrDefaultAsync(x => x.Username == request.AssignedTo);
+                    if(assignedTo == null)
+                    {
+                        return NotFound("Assigned to not found");
+                    }
 
-        //private bool TaskExists(int id)
-        //{
-        //    return _dbContext.Tasks.Any(e => e.Id == id);
-        //}
+                    task.UserId = assignedTo.Id;
+                    task.User = assignedTo;
+                }
+
+                if(request.Priority != null)
+                {
+                    var isConverted = Enum.TryParse(request.Priority, out Priority priority);
+                    if(isConverted)
+                    {
+                        task.Priority = priority;
+                    }
+                }
+
+                await dbContext.SaveChangesAsync();
+                return NoContent();
+            }
+        }
+
+        // DELETE: api/Tasks/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteTask(int id)
+        {
+            using(var dbContext = _dbContext)
+            {
+                var task = await _dbContext.Tasks.FindAsync(id);
+                if (task == null)
+                {
+                    return NotFound();
+                }
+
+                _dbContext.Tasks.Remove(task);
+                await _dbContext.SaveChangesAsync();
+
+                return NoContent();
+            }
+        }
     }
 }

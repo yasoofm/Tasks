@@ -39,19 +39,22 @@ namespace TasksAPI.Controllers
         [HttpPost("[action]")]
         public async Task<ActionResult<LoginResponse>> SignUp(SignUpRequest signUpRequest)
         {
-            var newUser = new User
+            using(var dbContext = _dbContext)
             {
-                Username = signUpRequest.Username,
-                Password = BCrypt.Net.BCrypt.EnhancedHashPassword(signUpRequest.Password),
-                Role = signUpRequest.Role
-            };
+                var newUser = new User
+                {
+                    Username = signUpRequest.Username,
+                    Password = BCrypt.Net.BCrypt.EnhancedHashPassword(signUpRequest.Password),
+                    Role = signUpRequest.Role
+                };
 
-            _ = await _dbContext.Users.AddAsync(newUser);
-            _ = await _dbContext.SaveChangesAsync();
+                await dbContext.Users.AddAsync(newUser);
+                await dbContext.SaveChangesAsync();
 
-            var result = await _tokenService.GenerateToken(newUser.Username, signUpRequest.Password);
+                var result = await _tokenService.GenerateToken(newUser.Username, signUpRequest.Password);
 
-            return Ok(result.Resposne);
+                return Ok(result.Resposne);
+            }
         }
     }
 }
