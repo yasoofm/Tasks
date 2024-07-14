@@ -107,6 +107,7 @@ namespace TasksAPI.Controllers
                     .Include(x => x.CreatedBy)
                     .Include(x => x.ModifiedBy)
                     .Include(x => x.User)
+                    .Include(x => x.Categories)
                     .Where(x => x.Id == id).FirstOrDefaultAsync();
 
                 if (task == null)
@@ -123,7 +124,13 @@ namespace TasksAPI.Controllers
                     Description = task.Description,
                     Priority = task.Priority.ToString(),
                     Status = task.Status.ToString(),
-                    Subject = task.Subject
+                    Subject = task.Subject,
+                    Categories = task.Categories.Select(x => new GetCategoryResponse
+                    {
+                        Id = x.Id,
+                        Name = x.Name,
+                        Color = x.Color,
+                    }).ToList()
                 });
             }
         }
@@ -135,7 +142,7 @@ namespace TasksAPI.Controllers
             using (var dbContext = _dbContext)
             {
                 var userIdClaim = User.FindFirst(Constants.UserIdClaim);
-                if(userIdClaim == null)
+                if (userIdClaim == null)
                 {
                     return NotFound("User id not found");
                 }
@@ -145,6 +152,7 @@ namespace TasksAPI.Controllers
                     .Include(x => x.User)
                     .Include(x => x.ModifiedBy)
                     .Include(x => x.User)
+                    .Include(x => x.Categories)
                     .Where(x => x.UserId == userId).Select(x => new GetTaskResponse
                     {
                         AssignedTo = x.User.Username,
@@ -154,7 +162,13 @@ namespace TasksAPI.Controllers
                         Priority = x.Priority.ToString(),
                         Status = x.Status.ToString(),
                         Subject = x.Subject,
-                        Description = x.Description
+                        Description = x.Description,
+                        Categories = x.Categories.Select(x => new GetCategoryResponse
+                        {
+                            Color = x.Color,
+                            Id = x.Id,
+                            Name = x.Name,
+                        }).ToList(),
                     }).ToListAsync();
 
                 return Ok(tasks);
@@ -168,7 +182,7 @@ namespace TasksAPI.Controllers
             using(var dbContext = _dbContext)
             {
                 var task = await dbContext.Tasks.SingleOrDefaultAsync(x => x.Id == id);
-                if(task == null)
+                if (task == null)
                 {
                     return NotFound("Task not found");
                 }
@@ -181,7 +195,7 @@ namespace TasksAPI.Controllers
                 
                 var userId = int.Parse(userIdClaim.Value);
                 var modifier = await dbContext.Users.FindAsync(userId);
-                if(modifier == null)
+                if (modifier == null)
                 {
                     return NotFound("Modifier not found");
                 }
@@ -193,12 +207,12 @@ namespace TasksAPI.Controllers
                     task.Subject = request.Subject;
                 }
 
-                if(request.Description != null)
+                if (request.Description != null)
                 {
                     task.Description = request.Description;
                 }
 
-                if(request.AssignedTo != null)
+                if (request.AssignedTo != null)
                 {
                     var assignedTo = await dbContext.Users.SingleOrDefaultAsync(x => x.Username == request.AssignedTo);
                     if(assignedTo == null)
@@ -210,7 +224,7 @@ namespace TasksAPI.Controllers
                     task.User = assignedTo;
                 }
 
-                if(request.Priority != null)
+                if (request.Priority != null)
                 {
                     var isConverted = Enum.TryParse(request.Priority, out Priority priority);
                     if(isConverted)

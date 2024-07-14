@@ -33,7 +33,7 @@ namespace TasksAPI.Migrations
 
                     b.HasIndex("TasksId");
 
-                    b.ToTable("CategoryTask");
+                    b.ToTable("CategoryTask", (string)null);
                 });
 
             modelBuilder.Entity("TasksAPI.Models.Entities.Category", b =>
@@ -54,7 +54,7 @@ namespace TasksAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("TasksAPI.Models.Entities.Task", b =>
@@ -95,7 +95,7 @@ namespace TasksAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Tasks");
+                    b.ToTable("Tasks", (string)null);
                 });
 
             modelBuilder.Entity("TasksAPI.Models.Entities.User", b =>
@@ -120,7 +120,7 @@ namespace TasksAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("CategoryTask", b =>

@@ -19,6 +19,6 @@ namespace TasksAPI.Models.Entities
         public required int UserId { get; set; }
         public required User User {  get; set; }
 
-        public List<Category>? Categories { get; set; }
+        public List<Category> Categories { get; set; } = new List<Category>();
     }
 }

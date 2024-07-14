@@ -10,5 +10,6 @@
         public required string ModifiedBy { get; set; }
         public required string CreatedBy { get; set; }
         public required string AssignedTo { get; set; }
+        public List<GetCategoryResponse> Categories { get; set; } = new List<GetCategoryResponse>();
     }
 }

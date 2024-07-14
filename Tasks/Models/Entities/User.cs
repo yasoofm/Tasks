@@ -8,8 +8,8 @@ namespace TasksAPI.Models.Entities
         public required string Username { get; set; }
         public required string Password { get; set; }
         public required string Role { get; set; }
-        public  List<Task>? Tasks { get; set; }
-        public List<Task>? CreatedTasks { get; set; }
-        public List<Task>? ModifiedTasks { get; set; }
+        public  List<Task> Tasks { get; set; } = new List<Task>();
+        public List<Task> CreatedTasks { get; set; } = new List<Task>();
+        public List<Task> ModifiedTasks { get; set; } = new List<Task>();
     }
 }
