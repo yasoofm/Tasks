@@ -29,8 +29,8 @@ namespace TasksAPI.Controllers
             _dbContext = context;
         }
 
-        // POST: api/Tasks/AddTask
-        [HttpPost("[action]")]
+        // POST: api/Tasks
+        [HttpPost]
         public async Task<ActionResult<GetTaskResponse>> AddTask(AddTaskRequest taskRequest)
         {
             using(var dbContext = _dbContext)
@@ -239,6 +239,30 @@ namespace TasksAPI.Controllers
                 _dbContext.Tasks.Remove(task);
                 await _dbContext.SaveChangesAsync();
 
+                return NoContent();
+            }
+        }
+
+        // PATCH: api/Tasks/Move/5
+        [HttpPatch("[action]/{id}")]
+        public async Task<IActionResult> Move(int id, MoveTaskRequest request)
+        {
+            using( var dbContext = _dbContext)
+            {
+                var task = await dbContext.Tasks.FindAsync(id);
+                if (task == null)
+                {
+                    return NotFound("Task not found");
+                }
+
+                var converted = Enum.TryParse(request.Status, out Status status);
+                
+                if (converted)
+                {
+                    task.Status = status;
+                }
+                
+                await dbContext.SaveChangesAsync();
                 return NoContent();
             }
         }
