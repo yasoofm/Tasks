@@ -1,6 +1,73 @@
 ﻿@page "/Signup"
 @inject NavigationManager Navigation
 
+<div style="display: flex; flex-direction: column; justify-content: center; height: 88VH; align-items: center;">
+    <TelerikForm Model="@Model" Width="30%" OnValidSubmit="@HandleValidSubmit">
+        <FormValidation>
+            <DataAnnotationsValidator></DataAnnotationsValidator>
+        </FormValidation>
+        <FormItems>
+            <FormItem Field="@nameof(Model.Username)"></FormItem>
+            <FormItem Field="@nameof(Model.Password)"></FormItem>
+            <FormItem Field="@nameof(Model.IsAdmin)"></FormItem>
+        </FormItems>
+    </TelerikForm>
+    <TelerikLoader Visible="@LoaderVisible"/>
+</div>
 @code {
     [CascadingParameter] private GlobalAppState? State { get; set; }
+    private SignupModel Model { get; set; } = new SignupModel();
+    private bool LoaderVisible { get; set; } = false;
+
+    async void HandleValidSubmit()
+    {
+        try
+        {
+            LoaderVisible = true;
+            StateHasChanged();
+
+            if (State == null)
+            {
+                throw new NullReferenceException("GlobalAppState is null in Login page");
+            }
+
+            var client = State!.CreateClient();
+            var payload = new SignupRequest { Password = Model.Password!, Username = Model.Username!, Role = Model.IsAdmin ? "admin" : "user" };
+            var response = await client.PostAsJsonAsync("Auth/Signup", payload);
+            if (!response.IsSuccessStatusCode)
+            {
+                LoaderVisible = false;
+                StateHasChanged();
+                return;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<SignupResponse>();
+            if (result == null)
+            {
+                throw new InvalidCastException("Signup response serialization failed");
+            }
+            State.SaveToken(result!.Token);
+            LoaderVisible = false;
+            StateHasChanged();
+            Navigation.NavigateTo("/");
+        }
+        catch (NullReferenceException ex)
+        {
+            LoaderVisible = false;
+            StateHasChanged();
+            Console.WriteLine(ex);
+        }
+        catch (InvalidCastException ex)
+        {
+            LoaderVisible = false;
+            StateHasChanged();
+            Console.WriteLine(ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            LoaderVisible = false;
+            StateHasChanged();
+            Console.WriteLine(ex);
+        }
+    }
 }

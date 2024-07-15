@@ -2,8 +2,7 @@
 @inject NavigationManager Navigation
 
 <div style="display: flex; flex-direction: column; justify-content: center; height: 88VH; align-items: center;">
-    <TelerikForm Model="@Model" Width="30%"
-                 OnValidSubmit="@HandleValidSubmit">
+    <TelerikForm Model="@Model" Width="30%" OnValidSubmit="@HandleValidSubmit">
         <FormValidation>
             <DataAnnotationsValidator></DataAnnotationsValidator>
         </FormValidation>

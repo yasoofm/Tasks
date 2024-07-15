@@ -7,6 +7,7 @@
 
 <TelerikButton OnClick="@SayHelloHandler" ThemeColor="primary">Say Hello</TelerikButton>
 <TelerikButton OnClick="@NavToLogin" ThemeColor="primary">Login</TelerikButton>
+<TelerikButton OnClick="@NavToSignup" ThemeColor="primary">Signup</TelerikButton>
 
 <br />
 
@@ -26,5 +27,10 @@ Welcome to your new app.
     void NavToLogin()
     {
         navigation.NavigateTo("Login");
+    }
+
+    void NavToSignup()
+    {
+        navigation.NavigateTo("Signup");
     }
 }
