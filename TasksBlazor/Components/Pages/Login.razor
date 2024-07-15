@@ -1,0 +1,85 @@
+﻿@page "/Login"
+@inject NavigationManager Navigation
+
+<div style="display: flex; flex-direction: column; justify-content: center; height: 88VH; align-items: center;">
+    <TelerikForm Model="@Model" Width="30%"
+                 OnValidSubmit="@HandleValidSubmit">
+        <FormValidation>
+            <DataAnnotationsValidator></DataAnnotationsValidator>
+        </FormValidation>
+        <FormItems>
+            <FormItem Field="@nameof(Model.Username)"></FormItem>
+            <FormItem Field="@nameof(Model.Password)">
+                <Template>
+                    <label for="pass" class="k-label k-form-label">Password:</label>
+                    <TelerikTextBox Id="pass" @bind-Value="@Model.Password" Password="true"></TelerikTextBox>
+                    <TelerikValidationMessage For="@(() => Model.Password)"></TelerikValidationMessage>
+                </Template>
+            </FormItem>
+        </FormItems>
+    </TelerikForm>
+    <TelerikLoader Visible="@LoaderVisible" />
+    @if (Failed)
+    {
+        <label style="color: #f31700; margin-top: 5px;">Username/Password combination is incorrect</label>
+    }
+</div>
+
+@code {
+    [CascadingParameter] private GlobalAppState? State { get; set; }
+    private LoginRequest Model { get; set; } = new LoginRequest();
+    private bool Failed { get; set; } = false;
+    private bool LoaderVisible { get; set; } = false;
+
+    async void HandleValidSubmit()
+    {
+        try
+        {
+            LoaderVisible = true;
+            StateHasChanged();
+
+            if (State == null)
+            {
+                throw new NullReferenceException("GlobalAppState is null in Login page");
+            }
+
+            var client = State!.CreateClient();
+            var response = await client.PostAsJsonAsync("Auth/Login", Model);
+            if (!response.IsSuccessStatusCode)
+            {
+                LoaderVisible = false;
+                Failed = true;
+                StateHasChanged();
+                return;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+            if (result == null)
+            {
+                throw new InvalidCastException("Login response serialization failed");
+            }
+            State.SaveToken(result!.Token);
+            LoaderVisible = false;
+            StateHasChanged();
+            Navigation.NavigateTo("/");
+        }
+        catch (NullReferenceException ex)
+        {
+            LoaderVisible = false;
+            StateHasChanged();
+            Console.WriteLine(ex);
+        }
+        catch (InvalidCastException ex)
+        {
+            LoaderVisible = false;
+            StateHasChanged();
+            Console.WriteLine(ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            LoaderVisible = false;
+            StateHasChanged();
+            Console.WriteLine(ex);
+        }
+    }
+}

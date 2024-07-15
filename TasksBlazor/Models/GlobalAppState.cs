@@ -3,7 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 
-namespace TaskBlazor.Models
+namespace TasksBlazor.Models
 {
     public class GlobalAppState
     {
@@ -21,7 +21,7 @@ namespace TaskBlazor.Models
             //var claimsIdentity = new ClaimsIdentity(jwtSecurityToken.Claims,
             //    CookieAuthenticationDefaults.AuthenticationScheme);
             Username = jwtSecurityToken.Claims.FirstOrDefault(p => p.Type == Constants.UserIdClaim)?.Value ?? "no user claim";
-            UserId = int.Parse(jwtSecurityToken.Claims.FirstOrDefault(p => p.Type == Constants.UserIdClaim)?.Value?? "-1");
+            UserId = int.Parse(jwtSecurityToken.Claims.FirstOrDefault(p => p.Type == Constants.UserIdClaim)?.Value ?? "-1");
             if (jwtSecurityToken.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Role)?.Value == "Admin")
             {
                 IsAdmin = true;

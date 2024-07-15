@@ -25,6 +25,7 @@ namespace TasksAPI.Controllers
         [HttpPost("[action]")]
         public async Task<ActionResult<LoginResponse>> Login(LoginRequest loginRequest)
         {
+            Console.WriteLine("hi");
             var result = await _tokenService.GenerateToken(loginRequest.Username, loginRequest.Password);
 
             if(result.IsValid)

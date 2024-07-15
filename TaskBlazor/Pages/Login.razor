@@ -1,6 +1,82 @@
 ﻿@page "/Login"
+@inject NavigationManager Navigation
 
-
+<TelerikForm Model="@Model" Width ="30%"
+              OnValidSubmit="@HandleValidSubmit"
+              OnInvalidSubmit="@HandleInvalidSubmit">
+    <FormValidation>
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+    </FormValidation>
+    <FormItems>
+        <FormItem Field="@nameof(Model.Username)"></FormItem>
+        <FormItem Field="@nameof(Model.Password)">
+            <Template>
+                <label for="pass" class="k-label k-form-label">Password:</label>
+                <TelerikTextBox Id="pass" @bind-Value="@Model.Password" Password="true"></TelerikTextBox>
+                <TelerikValidationMessage For="@(() => Model.Password)"></TelerikValidationMessage>
+            </Template>
+        </FormItem>
+        @if (Failed){
+            <FormItem>
+                <label class="k-label k-form-label">Username/Password combination is incorrect</label>
+            </FormItem>
+        }
+    </FormItems>
+</TelerikForm>
+<TelerikLoader Visible="@LoaderVisible" />
 
 @code {
+    [CascadingParameter] private GlobalAppState? State { get; set; }
+    private LoginRequest Model { get; set; } = new LoginRequest();
+    private bool Failed { get; set; } = false;
+    private bool LoaderVisible { get; set; } = false;
+
+    async void HandleValidSubmit()
+    {
+        try
+        {
+            LoaderVisible = true;
+            if (State == null)
+            {
+                LoaderVisible = false;
+                throw new NullReferenceException("GlobalAppState is null in Login page");
+            }
+
+            Console.WriteLine(State);
+
+            var client = State!.CreateClient();
+            var response = await client.PostAsJsonAsync("Auth/Login", Model);
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine(response.StatusCode);
+                Console.WriteLine(response.Headers);
+                LoaderVisible = false;
+                Failed = true;
+                return;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+            if (result == null)
+            {
+                LoaderVisible = false;
+                throw new InvalidCastException("Login response serialization failed");
+            }
+            State.SaveToken(result!.Token);
+            LoaderVisible = false;
+            Navigation.NavigateTo("/");
+        }
+        catch (NullReferenceException ex)
+        {
+            Console.WriteLine(ex);
+        }
+        catch (InvalidCastException ex)
+        {
+            Console.WriteLine(ex);
+        }
+    }
+
+    void HandleInvalidSubmit()
+    {
+        LoaderVisible = !LoaderVisible;
+    }
 }
