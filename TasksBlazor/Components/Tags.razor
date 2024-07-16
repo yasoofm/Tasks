@@ -1,0 +1,41 @@
+﻿<TelerikChipList Data="Data" Removable="true" OnRemove="OnChipRemove" Rounded="@ThemeConstants.Chip.Rounded.Full" RemoveIcon="@SvgIcon.X">
+    <ItemTemplate>
+        <span style="color: @context.Color">@context.Name</span>
+    </ItemTemplate>
+</TelerikChipList>
+@code {
+    [CascadingParameter] private GlobalAppState? State { set; get; }
+    [Parameter] public required IEnumerable<GetCategoryResponse> Data {set; get;}
+    [Parameter] public required int TaskId { set; get; }
+
+    async void OnChipRemove(ChipListRemoveEventArgs args)
+    {
+        try
+        {
+            var chip = args.Item as GetCategoryResponse;
+
+            if (State == null)
+            {
+                throw new NullReferenceException("State is null in Tags component");
+            }
+            var client = State.CreateClient();
+            var response = await client.DeleteAsync($"Categories/?taskId={TaskId}&categoryId={chip!.Id}");
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new BadHttpRequestException("Delete request failed in Tags component");
+            }
+        }
+        catch (NullReferenceException ex)
+        {
+            Console.WriteLine(ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine(ex);
+        }
+        catch (BadHttpRequestException ex)
+        {
+            Console.WriteLine(ex);
+        }
+    }
+}

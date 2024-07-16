@@ -44,7 +44,7 @@
 
             var client = State!.CreateClient();
             var response = await client.PostAsJsonAsync("Auth/Login", Model);
-            if (!response.IsSuccessStatusCode)
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
                 LoaderVisible = false;
                 Failed = true;

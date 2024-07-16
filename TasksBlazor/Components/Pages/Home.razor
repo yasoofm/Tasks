@@ -8,7 +8,9 @@
 <TelerikButton OnClick="@SayHelloHandler" ThemeColor="primary">Say Hello</TelerikButton>
 <TelerikButton OnClick="@NavToLogin" ThemeColor="primary">Login</TelerikButton>
 <TelerikButton OnClick="@NavToSignup" ThemeColor="primary">Signup</TelerikButton>
-
+<br />
+<br />
+<Ticket Data="ticket"></Ticket>
 <br />
 
 @helloString
@@ -17,6 +19,15 @@ Welcome to your new app.
 
 @code {
     MarkupString helloString;
+    private GetTaskResponse ticket { get; set; }
+
+    protected override void OnInitialized()
+    {
+        ticket = new GetTaskResponse
+        {
+            Id = 1,            AssignedTo = "",            CreatedBy = "",            ModifiedBy = "",            Priority = "",            Status = "InProgress",            Subject = "test",            Categories = new List<GetCategoryResponse>(){ new GetCategoryResponse{Color = "#c69", Id = 1, Name = "test tag"}, new GetCategoryResponse { Color = "#909", Id = 2, Name = "2nd" } },            Description = "test description"        };
+        base.OnInitialized();
+    }
 
     void SayHelloHandler()
     {
