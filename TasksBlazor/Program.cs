@@ -17,6 +17,8 @@ namespace TasksBlazor
 
             builder.Services.AddTelerikBlazor();
 
+            builder.Services.AddScoped<IMyService, MyService>();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

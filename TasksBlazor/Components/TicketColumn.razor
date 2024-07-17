@@ -1,0 +1,23 @@
+﻿<style>
+    .custom-header-style{
+        display: flex;
+        justify-content: center;
+    }
+</style>
+<TelerikListView Data="@Data" Pageable="false">
+    <HeaderTemplate>
+        <div style="display: flex; justify-content: center;">
+            <h6>@Title</h6>
+        </div>
+    </HeaderTemplate>
+    <Template>
+        <CascadingValue Value="HomePage">
+            <Ticket Data="@context"></Ticket>
+        </CascadingValue>
+    </Template>
+</TelerikListView>
+@code {
+    [Parameter] public required string Title { get; set; }
+    [Parameter] public required IEnumerable<GetTaskResponse> Data { get; set; }
+    [CascadingParameter] public Home? HomePage { get; set; }
+}

@@ -1,5 +1,6 @@
 ﻿@page "/"
 @inject NavigationManager navigation
+@inject IMyService MyService
 
 <PageTitle>Home</PageTitle>
 
@@ -10,7 +11,17 @@
 <TelerikButton OnClick="@NavToSignup" ThemeColor="primary">Signup</TelerikButton>
 <br />
 <br />
-<Ticket Data="ticket"></Ticket>
+<div style="display: flex; justify-content: space-around;">
+    <div>
+        <TicketColumn Data="@TodoTickets" Title="To do"></TicketColumn>
+    </div>
+    <div>
+        <TicketColumn Data="@ProgressTickes" Title="In progress"></TicketColumn>
+    </div>
+    <div>
+        <TicketColumn Data="@DoneTickets" Title="Done"></TicketColumn>
+    </div>
+</div>
 <br />
 
 @helloString
@@ -19,14 +30,55 @@ Welcome to your new app.
 
 @code {
     MarkupString helloString;
-    private GetTaskResponse ticket { get; set; }
+    [CascadingParameter] private GlobalAppState? State { get; set; }
+    public IEnumerable<GetTaskResponse>? TodoTickets { get; set; }
+    public IEnumerable<GetTaskResponse>? ProgressTickes { get; set; }
+    public IEnumerable<GetTaskResponse>? DoneTickets { get; set; }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        ticket = new GetTaskResponse
+        MyService.RefreshRequested += RefreshState;
+        try
         {
-            Id = 1,            AssignedTo = "",            CreatedBy = "",            ModifiedBy = "",            Priority = "",            Status = "InProgress",            Subject = "test",            Categories = new List<GetCategoryResponse>(){ new GetCategoryResponse{Color = "#c69", Id = 1, Name = "test tag"}, new GetCategoryResponse { Color = "#909", Id = 2, Name = "2nd" } },            Description = "test description"        };
-        base.OnInitialized();
+            if (State == null)
+            {
+                throw new NullReferenceException("State is null in Home");
+            }
+
+            if (State.IsLoggedIn)
+            {
+                await State.GetTasksAsync();
+
+                TodoTickets = State.todoTickets;
+                ProgressTickes = State.progressTickets;
+                DoneTickets = State.doneTickets;
+            }
+        }
+        catch (NullReferenceException ex)
+        {
+            Console.WriteLine(ex);
+        }
+    }
+
+    private void RefreshState()
+    {
+        try
+        {
+            if (State == null)
+            {
+                throw new NullReferenceException("State is null in Home in RefreshState");
+            }
+
+            TodoTickets = State.todoTickets;
+            ProgressTickes = State.progressTickets;
+            DoneTickets = State.doneTickets;
+
+            this.StateHasChanged();
+        }
+        catch (NullReferenceException ex)
+        {
+            Console.WriteLine(ex);
+        }
     }
 
     void SayHelloHandler()

@@ -1,0 +1,54 @@
+﻿@page "/Details/{Id:int}"
+@inject NavigationManager Navigation
+
+<TelerikForm Model="@Model" Width="30%" OnValidSubmit="@HandleValidSubmit">
+    <FormValidation>
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+    </FormValidation>
+    <FormItems>
+        <FormItem Field="@nameof(Model.Subject)"></FormItem>
+        <FormItem Field="@nameof(Model.Description)">
+            <Template>
+                <label for="desc" class="k-label k-form-label">Description</label>
+                <TelerikTextArea @bind-Value="Model!.Description"></TelerikTextArea>
+            </Template>
+        </FormItem>
+        <FormItem Field="@nameof(Model.Priority)"></FormItem>
+        @* <FormItem Field="@nameof(Model.Password")>
+            <Template>
+                <label for="pass" class="k-label k-form-label">Password:</label>
+                <TelerikTextBox Id="pass" @bind-Value="@Model.Password" Password="true"></TelerikTextBox>
+                <TelerikValidationMessage For="@(() => Model.Password)"></TelerikValidationMessage>
+            </Template>
+        </FormItem> *@
+    </FormItems>
+</TelerikForm>
+
+@code {
+    [CascadingParameter] private GlobalAppState? State { get; set; }
+    [Parameter] public required int Id { get; set; }
+    private UpdateTaskModel? Model { get; set; }
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            if (State == null)
+            {
+                throw new NullReferenceException("State is null in Details");
+            }
+            Model = State.GetTaskModel(Id);
+        }
+        catch (NullReferenceException ex)
+        {
+            Console.WriteLine(ex);
+        }
+
+        base.OnInitialized();
+    }
+
+    async void HandleValidSubmit()
+    {
+        
+    }
+}
