@@ -44,7 +44,7 @@
 
             var client = State!.CreateClient();
             var response = await client.PostAsJsonAsync("Auth/Login", Model);
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            if (!response.IsSuccessStatusCode)
             {
                 LoaderVisible = false;
                 Failed = true;
@@ -53,10 +53,7 @@
             }
 
             var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-            if (result == null)
-            {
-                throw new InvalidCastException("Login response serialization failed");
-            }
+            
             State.SaveToken(result!.Token);
             LoaderVisible = false;
             StateHasChanged();
@@ -68,17 +65,17 @@
             StateHasChanged();
             Console.WriteLine(ex);
         }
-        catch (InvalidCastException ex)
-        {
-            LoaderVisible = false;
-            StateHasChanged();
-            Console.WriteLine(ex);
-        }
         catch (HttpRequestException ex)
         {
             LoaderVisible = false;
             StateHasChanged();
             Console.WriteLine(ex);
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            LoaderVisible = false;
+            StateHasChanged();
+            Console.WriteLine("Login response serialization failed\n" + ex);
         }
     }
 }

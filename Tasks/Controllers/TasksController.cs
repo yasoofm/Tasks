@@ -227,9 +227,18 @@ namespace TasksAPI.Controllers
                 if (request.Priority != null)
                 {
                     var isConverted = Enum.TryParse(request.Priority, out Priority priority);
-                    if(isConverted)
+                    if (isConverted)
                     {
                         task.Priority = priority;
+                    }
+                }
+
+                if (request.Status != null)
+                {
+                    var isConverted = Enum.TryParse(request.Status, out Status status);
+                    if (isConverted)
+                    {
+                        task.Status = status;
                     }
                 }
 
