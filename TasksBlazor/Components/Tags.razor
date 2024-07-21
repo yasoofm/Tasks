@@ -1,4 +1,6 @@
-﻿<TelerikChipList Data="Data" Removable="true" OnRemove="OnChipRemove" Rounded="@ThemeConstants.Chip.Rounded.Full" RemoveIcon="@SvgIcon.X">
+﻿@inject DetailsRefreshService MyService
+
+<TelerikChipList Data="Data" Removable="true" OnRemove="OnChipRemove" Rounded="@ThemeConstants.Chip.Rounded.Full" RemoveIcon="@SvgIcon.X">
     <ItemTemplate>
         <span style="color: @context.Color">@context.Name</span>
     </ItemTemplate>
@@ -24,6 +26,9 @@
             {
                 throw new BadHttpRequestException("Delete request failed in Tags component");
             }
+            State.RemoveCategory(TaskId, chip.Id);
+            MyService.CallRequestRefresh();
+            StateHasChanged();
         }
         catch (NullReferenceException ex)
         {

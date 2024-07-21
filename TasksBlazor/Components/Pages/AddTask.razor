@@ -1,0 +1,119 @@
+﻿@page "/AddTask"
+@inject NavigationManager Navigation
+
+<TelerikForm Model="@Model" Width="30%" OnValidSubmit="@HandleValidSubmit">
+    <FormValidation>
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+    </FormValidation>
+    <FormItems>
+        <FormItem Field="@nameof(Model.Subject)"></FormItem>
+        <FormItem Field="@nameof(Model.Description)">
+            <Template>
+                <label for="desc" class="k-label k-form-label">Description</label>
+                <TelerikTextArea @bind-Value="Model!.Description"></TelerikTextArea>
+            </Template>
+        </FormItem>
+        <FormItem Field="@nameof(Model.Priority)">
+            <Template>
+                <label for="prio" class="k-label k-form-label">Priority</label>
+                <TelerikRadioGroup 
+                    Id="prio" Data="@priorities"
+                    @bind-Value="@Model!.Priority"
+                    Layout="RadioGroupLayout.Horizontal">
+                </TelerikRadioGroup>
+            </Template>
+        </FormItem>
+        <FormItem Field="@nameof(Model.Status)">
+            <Template>
+                <label for="stat" class="k-label k-form-label">Status</label>
+                <TelerikRadioGroup 
+                    Id="stat" Data="@statuses"
+                    @bind-Value="@Model!.Status"
+                    TextField="@nameof(Status.Name)"
+                    ValueField="@nameof(Status.Value)"
+                    Layout="RadioGroupLayout.Horizontal">
+                </TelerikRadioGroup>
+            </Template>
+        </FormItem>
+        @if (State!.IsAdmin)
+        {
+            <FormItem Field="@nameof(Model.AssignedTo)">
+
+            </FormItem>
+        }
+    </FormItems>
+</TelerikForm>
+<TelerikLoader Visible="@LoaderVisible" />
+
+
+@code {
+    [CascadingParameter] private GlobalAppState? State { get; set; }
+    [Parameter] public required int Id { get; set; }
+    private UpdateTaskRequest? Model { get; set; }
+    private List<string> priorities { get; set; } = [Priority.Low.ToString(), Priority.Medium.ToString(), Priority.High.ToString()];
+    private List<Status> statuses { get; set; } = [Status.ToDo, Status.InProgress, Status.Done];
+    private bool LoaderVisible { get; set; } = false;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            if (State == null)
+            {
+                throw new NullReferenceException("State is null in Details");
+            }
+            Model = State.GetTaskModel(Id);
+        }
+        catch (NullReferenceException ex)
+        {
+            Console.WriteLine(ex);
+        }
+
+        base.OnInitialized();
+    }
+
+    async void HandleValidSubmit()
+    {
+        try
+        {
+            LoaderVisible = true;
+            StateHasChanged();
+
+            if (State == null)
+            {
+                throw new NullReferenceException("GlobalAppState is null in Details page");
+            }
+
+            var client = State!.CreateClient();
+            var response = await client.PatchAsJsonAsync($"Tasks/{Model!.Id}", Model);
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                LoaderVisible = false;
+                StateHasChanged();
+                return;
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                LoaderVisible = false;
+                StateHasChanged();
+                return;
+            }
+            LoaderVisible = false;
+            StateHasChanged();
+            Navigation.NavigateTo("/");
+        }
+        catch (NullReferenceException ex)
+        {
+            LoaderVisible = false;
+            StateHasChanged();
+            Console.WriteLine(ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            LoaderVisible = false;
+            StateHasChanged();
+            Console.WriteLine(ex);
+        }
+    }
+}

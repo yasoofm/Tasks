@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TasksAPI", "Tasks\TasksAPI.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskBlazor", "TaskBlazor\TaskBlazor.csproj", "{6B3D77DC-7A64-4C85-B4DC-2B83C401F831}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TasksBlazor", "TasksBlazor\TasksBlazor.csproj", "{C703231E-2828-45CD-B884-F865266758EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TasksBlazor", "TasksBlazor\TasksBlazor.csproj", "{C703231E-2828-45CD-B884-F865266758EF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

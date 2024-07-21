@@ -17,7 +17,9 @@ namespace TasksBlazor
 
             builder.Services.AddTelerikBlazor();
 
-            builder.Services.AddScoped<IMyService, MyService>();
+            builder.Services.AddScoped<HomeRefreshService, MyHomeService>();
+
+            builder.Services.AddScoped<DetailsRefreshService, MyDetailsService>();
 
             var app = builder.Build();
 

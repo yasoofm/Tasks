@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using TasksBlazor.Components.Pages;
+using TasksBlazor.Models.Requests;
 using TasksBlazor.Models.Responses;
 
 namespace TasksBlazor.Models
@@ -112,17 +113,17 @@ namespace TasksBlazor.Models
             }
         }
 
-        public UpdateTaskModel GetTaskModel(int Id)
+        public UpdateTaskRequest GetTaskModel(int Id)
         {
             try
             {
                 var ticket = tickets.FirstOrDefault(x => x.Id == Id);
                 if (ticket == null)
                 {
-                    throw new NullReferenceException("Model is null in GetTaskModel in GlobalAppState");
+                    throw new NullReferenceException("Ticket is null in GetTaskModel in GlobalAppState");
                 }
 
-                var model = new UpdateTaskModel
+                var model = new UpdateTaskRequest
                 {
                     AssignedTo = ticket.AssignedTo,
                     CreatedBy = ticket.CreatedBy,
@@ -132,12 +133,7 @@ namespace TasksBlazor.Models
                     Priority = ticket.Priority,
                     Status = ticket.Status,
                     Subject = ticket.Subject,
-                    Categories = ticket.Categories.Select(x => new UpdateCategoryModel
-                    {
-                        Id = x.Id,
-                        Name = x.Name,
-                        Color = x.Color,
-                    }).ToList(),
+                    Categories = ticket.Categories
                 };
 
                 return model;
@@ -147,7 +143,61 @@ namespace TasksBlazor.Models
                 Console.WriteLine(ex);
             }
 
-            return new UpdateTaskModel { Subject = "Ticket not found"};
+            return new UpdateTaskRequest { Subject = "Ticket not found"};
+        }
+
+        public void AddCategory(int ticketId, GetCategoryResponse category)
+        {
+            try
+            {
+                var ticket = tickets.FirstOrDefault(x => x.Id == ticketId);
+                if (ticket == null)
+                {
+                    throw new NullReferenceException("Ticket is null in GlobalAppState AddCategory");
+                }
+
+                if (ticket.Categories.Any(x => x.Name == category.Name))
+                {
+                    return;
+                }
+
+                ticket.Categories.Add(category);
+
+                var model = new UpdateTaskRequest
+                {
+                    AssignedTo = ticket.AssignedTo,
+                    CreatedBy = ticket.CreatedBy,
+                    Description = ticket.Description,
+                    Id = ticket.Id,
+                    ModifiedBy = ticket.ModifiedBy,
+                    Priority = ticket.Priority,
+                    Status = ticket.Status,
+                    Subject = ticket.Subject,
+                    Categories = ticket.Categories
+                };
+            }
+            catch (NullReferenceException ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+        
+        public void RemoveCategory(int ticketId, int categoryId)
+        {
+            try
+            {
+                var ticket = tickets.FirstOrDefault(x => x.Id == ticketId);
+                if (ticket == null)
+                {
+                    throw new NullReferenceException("Ticket is null in GlobalAppState in RemoveCategory");
+                }
+                var category = ticket.Categories.Where(x => x.Id == categoryId).FirstOrDefault();
+                ticket.Categories.Remove(category!);
+            }
+            catch (NullReferenceException ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
     }
 }

@@ -1,68 +1,100 @@
 ﻿@page "/Details/{Id:int}"
 @inject NavigationManager Navigation
+@inject DetailsRefreshService MyService
 
-<TelerikForm Model="@Model" Width="30%" OnValidSubmit="@HandleValidSubmit">
-    <FormValidation>
-        <DataAnnotationsValidator></DataAnnotationsValidator>
-    </FormValidation>
-    <FormItems>
-        <FormItem Field="@nameof(Model.Subject)"></FormItem>
-        <FormItem Field="@nameof(Model.Description)">
-            <Template>
-                <label for="desc" class="k-label k-form-label">Description</label>
-                <TelerikTextArea @bind-Value="Model!.Description"></TelerikTextArea>
-            </Template>
-        </FormItem>
-        <FormItem Field="@nameof(Model.Priority)">
-            <Template>
-                <label for="prio" class="k-label k-form-label">Priority</label>
-                <TelerikRadioGroup 
-                    Id="prio" Data="@priorities"
-                    @bind-Value="@Model!.Priority"
-                    Layout="RadioGroupLayout.Horizontal">
-                </TelerikRadioGroup>
-            </Template>
-        </FormItem>
-        <FormItem Field="@nameof(Model.Status)">
-            <Template>
-                <label for="stat" class="k-label k-form-label">Status</label>
-                <TelerikRadioGroup 
-                    Id="stat" Data="@statuses"
-                    @bind-Value="@Model!.Status"
-                    TextField="@nameof(Status.Name)"
-                    ValueField="@nameof(Status.Value)"
-                    Layout="RadioGroupLayout.Horizontal">
-                </TelerikRadioGroup>
-            </Template>
-        </FormItem>
-        @if (State!.IsAdmin)
-        {
-            <FormItem Field="@nameof(Model.AssignedTo)">
+<TelerikGridLayout>
+    <GridLayoutColumns>
+        <GridLayoutColumn></GridLayoutColumn>
+        <GridLayoutColumn></GridLayoutColumn>
+    </GridLayoutColumns>
+    <GridLayoutRows>
+        <GridLayoutRow></GridLayoutRow>
+    </GridLayoutRows>
+    <GridLayoutItems>
+        <GridLayoutItem Row="1" Column="1">
+            <h5>Update Task</h5>
+            <TelerikForm Model="@Model" Width="90%" OnValidSubmit="@HandleValidSubmit">
+                <FormValidation>
+                    <DataAnnotationsValidator></DataAnnotationsValidator>
+                </FormValidation>
+                <FormItems>
+                    <FormItem Field="@nameof(Model.Subject)"></FormItem>
+                    <FormItem Field="@nameof(Model.Description)">
+                        <Template>
+                            <label for="desc" class="k-label k-form-label">Description</label>
+                            <TelerikTextArea @bind-Value="Model!.Description"></TelerikTextArea>
+                        </Template>
+                    </FormItem>
+                    <FormItem Field="@nameof(Model.Priority)">
+                        <Template>
+                            <label for="prio" class="k-label k-form-label">Priority</label>
+                            <TelerikRadioGroup Id="prio" Data="@priorities"
+                                               @bind-Value="@Model!.Priority"
+                                               Layout="RadioGroupLayout.Horizontal">
+                            </TelerikRadioGroup>
+                        </Template>
+                    </FormItem>
+                    <FormItem Field="@nameof(Model.Status)">
+                        <Template>
+                            <label for="stat" class="k-label k-form-label">Status</label>
+                            <TelerikRadioGroup Id="stat" Data="@statuses"
+                                               @bind-Value="@Model!.Status"
+                                               TextField="@nameof(Status.Name)"
+                                               ValueField="@nameof(Status.Value)"
+                                               Layout="RadioGroupLayout.Horizontal">
+                            </TelerikRadioGroup>
+                        </Template>
+                    </FormItem>
+                    @if (State!.IsAdmin)
+                    {
+                        <FormItem Field="@nameof(Model.AssignedTo)">
 
-            </FormItem>
-        }
-    </FormItems>
-</TelerikForm>
-<TelerikLoader Visible="@LoaderVisible" />
+                        </FormItem>
+                    }
+                </FormItems>
+            </TelerikForm>
+            <TelerikLoader Visible="@TaskLoaderVisible" />
+        </GridLayoutItem>
+        <GridLayoutItem Row="1" Column="2">
+            <h5>Add Category</h5>
+            <TelerikForm Model="@CategoryModel" Width="90%" OnValidSubmit="@HandleCategoryValidSubmit">
+                <FormValidation>
+                    <DataAnnotationsValidator></DataAnnotationsValidator>
+                </FormValidation>
+                <FormItems>
+                    <FormItem Field="@nameof(CategoryModel.Name)"></FormItem>
+                </FormItems>
+            </TelerikForm>
+            <TelerikLoader Visible="@CategoryLoaderVisible"></TelerikLoader>
+            <br/>
+            <Tags Data="Categories" TaskId="(int) Model!.Id!"></Tags>
+        </GridLayoutItem>
+    </GridLayoutItems>
+</TelerikGridLayout>
 
 
 @code {
     [CascadingParameter] private GlobalAppState? State { get; set; }
     [Parameter] public required int Id { get; set; }
-    private UpdateTaskModel? Model { get; set; }
+    private UpdateTaskRequest? Model { get; set; }
+    private AddCategoryRequest? CategoryModel { get; set; } = new AddCategoryRequest();
+    private List<GetCategoryResponse>? Categories { get; set; }
     private List<string> priorities { get; set; } = [Priority.Low.ToString(), Priority.Medium.ToString(), Priority.High.ToString()];
     private List<Status> statuses { get; set; } = [Status.ToDo, Status.InProgress, Status.Done];
-    private bool LoaderVisible { get; set; } = false;
+    private bool TaskLoaderVisible { get; set; } = false;
+    private bool CategoryLoaderVisible { get; set; } = false;
 
     protected override void OnInitialized()
     {
         try
         {
+            MyService.RefreshRequested += RefreshState;
             if (State == null)
             {
                 throw new NullReferenceException("State is null in Details");
             }
             Model = State.GetTaskModel(Id);
+            Categories = Model.Categories;
         }
         catch (NullReferenceException ex)
         {
@@ -76,7 +108,7 @@
     {
         try
         {
-            LoaderVisible = true;
+            TaskLoaderVisible = true;
             StateHasChanged();
 
             if (State == null)
@@ -86,34 +118,72 @@
 
             var client = State!.CreateClient();
             var response = await client.PatchAsJsonAsync($"Tasks/{Model!.Id}", Model);
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
-                LoaderVisible = false;
-                StateHasChanged();
-                return;
-            }
 
             if (!response.IsSuccessStatusCode)
             {
-                LoaderVisible = false;
+                TaskLoaderVisible = false;
                 StateHasChanged();
                 return;
             }
-            LoaderVisible = false;
+            TaskLoaderVisible = false;
             StateHasChanged();
             Navigation.NavigateTo("/");
         }
         catch (NullReferenceException ex)
         {
-            LoaderVisible = false;
+            TaskLoaderVisible = false;
             StateHasChanged();
             Console.WriteLine(ex);
         }
         catch (HttpRequestException ex)
         {
-            LoaderVisible = false;
+            TaskLoaderVisible = false;
             StateHasChanged();
             Console.WriteLine(ex);
         }
+    }
+
+    async void HandleCategoryValidSubmit()
+    {
+        try
+        {
+            CategoryLoaderVisible = true;
+            StateHasChanged();
+
+            if (State == null)
+            {
+                throw new NullReferenceException("GlobalAppState is null in Details page");
+            }
+
+            var client = State!.CreateClient();
+            var response = await client.PostAsJsonAsync($"Categories/{Model!.Id}", CategoryModel);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<GetCategoryResponse>();
+                State.AddCategory(Id, result!);
+                OnInitialized();
+            }
+            CategoryLoaderVisible = false;
+            StateHasChanged();
+        }
+        catch (NullReferenceException ex)
+        {
+            CategoryLoaderVisible = false;
+            StateHasChanged();
+            Console.WriteLine(ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            CategoryLoaderVisible = false;
+            StateHasChanged();
+            Console.WriteLine(ex);
+        }
+    }
+
+    void RefreshState()
+    {
+        OnInitialized();
+        StateHasChanged();
     }
 }

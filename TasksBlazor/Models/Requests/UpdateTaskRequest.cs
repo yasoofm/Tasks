@@ -1,8 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using TasksBlazor.Models.Responses;
 
-namespace TasksBlazor.Models
+namespace TasksBlazor.Models.Requests
 {
-    public class UpdateTaskModel
+    public class UpdateTaskRequest
     {
         [Editable(false)]
         public int? Id { get; set; }
@@ -15,14 +16,6 @@ namespace TasksBlazor.Models
         [Editable(false)]
         public string? CreatedBy { get; set; }
         public string? AssignedTo { get; set; }
-        public List<UpdateCategoryModel> Categories { get; set; } = new List<UpdateCategoryModel>();
-    }
-
-    public class UpdateCategoryModel
-    {
-        [Editable(false)]
-        public int? Id { get; set; }
-        public string? Name { get; set; }
-        public string? Color { get; set; }
+        public List<GetCategoryResponse> Categories { get; set; } = new List<GetCategoryResponse>();
     }
 }

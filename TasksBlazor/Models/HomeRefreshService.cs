@@ -1,12 +1,12 @@
 ﻿namespace TasksBlazor.Models
 {
-    public interface IMyService
+    public interface HomeRefreshService
     {
         event Action RefreshRequested;
         void CallRequestRefresh();
     }
 
-    public class MyService : IMyService
+    public class MyHomeService : HomeRefreshService
     {
         public event Action RefreshRequested;
         public void CallRequestRefresh()
