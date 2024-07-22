@@ -4,7 +4,14 @@
 <div style="margin: 5px;">
     <TelerikCard Width="250px">
         <CardBody>
-            <h6>@Data.Subject</h6>
+            <div style="display: flex; justify-content: space-between; width: 220px; align-items: center;">
+                <h6 style="margin-bottom: 0;">@Data.Subject</h6>
+                <TelerikButton 
+                    FillMode="@ThemeConstants.Button.FillMode.Clear"
+                    Size="@ThemeConstants.Button.Size.Small"
+                    Rounded="@ThemeConstants.Button.Rounded.Full"
+                               Icon="SvgIcon.X" OnClick="@OnRemoveHandle"></TelerikButton>
+            </div>  
         </CardBody>
         <CardActions Orientation="@CardOrientation.Horizontal" Layout="@CardActionsLayout.Stretch">
             <TelerikButton FillMode="@ThemeConstants.Button.FillMode.Solid" OnClick="@OnClickHandler">Details</TelerikButton>
@@ -12,7 +19,7 @@
                                  @bind-Value="Data.Status"
                                  TextField="@nameof(Status.Name)"
                                  ValueField="@nameof(Status.Value)"
-                                 OnChange="@OnBlurHandler">
+                                 OnChange="@OnChangeHandle">
             </TelerikDropDownList>
         </CardActions>
         <CardFooter>
@@ -33,7 +40,7 @@
         Navigation.NavigateTo($"/Details/{Data.Id}");
     }
 
-    async void OnBlurHandler(object selected)
+    async void OnChangeHandle(object selected)
     {
         var currentValue = selected as string; 
         if (currentValue == lastValue)
@@ -68,6 +75,30 @@
             Console.WriteLine(ex);
         }
         catch (HttpRequestException ex)
+        {
+            Console.WriteLine(ex);
+        }
+    }
+
+    async void OnRemoveHandle()
+    {
+        try
+        {
+            if (State == null)
+            {
+                throw new NullReferenceException("State is null in Ticket component");
+            }
+
+            var client = State.CreateClient();
+            var response = await client.DeleteAsync($"Tasks/{Data.Id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                State.RemoveTicket(Data.Id);
+                MyService.CallRequestRefresh();
+            }
+        }
+        catch (NullReferenceException ex)
         {
             Console.WriteLine(ex);
         }

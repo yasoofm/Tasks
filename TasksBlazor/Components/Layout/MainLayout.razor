@@ -1,17 +1,26 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject HomeRefreshService MyService
 
 <TelerikRootComponent>
     <div class="page">
-        <div class="sidebar">
-            <NavMenu />
-        </div>
-
         <main>
             <div class="top-row px-4">
-                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+                <TelerikButton OnClick="@NavToHome" ThemeColor="primary">Home</TelerikButton>
+                <span style="width: 5px;"></span>
+                @if (State!.IsLoggedIn)
+                {
+                    <TelerikButton OnClick="@Logout" ThemeColor="primary">Logout</TelerikButton>
+                }
+                else
+                {
+                    <TelerikButton OnClick="@NavToLogin" ThemeColor="primary">Login</TelerikButton>
+                    <span style="width: 5px;"></span>
+                    <TelerikButton OnClick="@NavToSignup" ThemeColor="primary">Signup</TelerikButton>    
+                }
             </div>
 
-            <article class="content px-4">
+            <article class="content">
                 @Body
             </article>
         </main>
@@ -23,3 +32,40 @@
         <a class="dismiss">🗙</a>
     </div>
 </TelerikRootComponent>
+
+@code{
+    [CascadingParameter] GlobalAppState? State { get; set; }
+
+    void NavToHome()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    void NavToLogin()
+    {
+        Navigation.NavigateTo("Login");
+    }
+
+    void NavToSignup()
+    {
+        Navigation.NavigateTo("Signup");
+    }
+
+    void Logout(){
+        try
+        {
+            if (State == null)
+            {
+                throw new NullReferenceException("State is null im MainLayout");
+            }
+
+            State.Logout();
+            Navigation.NavigateTo("/");
+            MyService.CallRequestRefresh();
+        }
+        catch (NullReferenceException ex)
+        {
+            Console.WriteLine(ex);
+        }
+    }
+}

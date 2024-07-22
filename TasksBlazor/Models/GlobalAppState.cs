@@ -2,6 +2,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
+using TasksBlazor.Components;
 using TasksBlazor.Components.Pages;
 using TasksBlazor.Models.Requests;
 using TasksBlazor.Models.Responses;
@@ -55,7 +56,7 @@ namespace TasksBlazor.Models
             return client;
         }
 
-        public async Task GetTasksAsync()
+        public async Task FetchTasksAsync()
         {
             try
             {
@@ -90,6 +91,19 @@ namespace TasksBlazor.Models
             {
                 Console.WriteLine(ex);
             }
+        }
+
+        public (List<GetTaskResponse>, List<GetTaskResponse>, List<GetTaskResponse>) GetTasks(string filter = "")
+        {
+            if (filter.IsNullOrEmpty())
+            {
+                return (todoTickets, progressTickets, doneTickets);
+            }
+            var todoList = todoTickets.Where(x => x.Categories.Any(x => x.Name.Contains(filter))).ToList();
+            var progressList = progressTickets.Where(x => x.Categories.Any(x => x.Name.Contains(filter))).ToList();
+            var doneList = doneTickets.Where(x => x.Categories.Any(x => x.Name.Contains(filter))).ToList();
+
+            return (todoList, progressList, doneList);
         }
 
         public void UpdateTicket(GetTaskResponse updatedTicket)
@@ -200,6 +214,28 @@ namespace TasksBlazor.Models
             }
         }
 
+        public void RemoveTicket(int ticketId)
+        {
+            try
+            {
+                var ticket = tickets.FirstOrDefault(x => x.Id == ticketId);
+                if (ticket == null)
+                {
+                    throw new NullReferenceException("Ticket is null in GlobalAppState in RemoveTicket");
+                }
+
+                tickets.Remove(ticket);
+
+                todoTickets = tickets.Where(x => x.Status == "ToDo").ToList();
+                progressTickets = tickets.Where(x => x.Status == "InProgress").ToList();
+                doneTickets = tickets.Where(x => x.Status == "Done").ToList();
+            }
+            catch (NullReferenceException ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+
         public void AddTicket(GetTaskResponse ticket)
         {
             tickets.Add(ticket);
@@ -207,6 +243,17 @@ namespace TasksBlazor.Models
             todoTickets = tickets.Where(x => x.Status == "ToDo").ToList();
             progressTickets = tickets.Where(x => x.Status == "InProgress").ToList();
             doneTickets = tickets.Where(x => x.Status == "Done").ToList();
+        }
+
+        public void Logout()
+        {
+            tickets = new List<GetTaskResponse>();
+            todoTickets = new List<GetTaskResponse>();
+            progressTickets = new List<GetTaskResponse>();
+            doneTickets = new List<GetTaskResponse>();
+
+            Token = "";
+            IsAdmin = false;
         }
     }
 }

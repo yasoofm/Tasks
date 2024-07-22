@@ -3,42 +3,56 @@
 @inject HomeRefreshService MyService
 
 <PageTitle>Home</PageTitle>
-
-<h1>Hello, world!</h1>
-
-<TelerikButton OnClick="@SayHelloHandler" ThemeColor="primary">Say Hello</TelerikButton>
-<TelerikButton OnClick="@NavToLogin" ThemeColor="primary">Login</TelerikButton>
-<TelerikButton OnClick="@NavToSignup" ThemeColor="primary">Signup</TelerikButton>
-<TelerikButton OnClick="@NavToAddTask" ThemeColor="primary">Add Task</TelerikButton>
-<br />
-<br />
-<div style="display: flex; justify-content: space-around;">
-    <div>
-        <TicketColumn Data="@TodoTickets" Title="To do"></TicketColumn>
+<TelerikCard>
+    <div style="padding: 15px;">
+        <div style="display: flex; justify-content: space-between; margin-right: 6.5%; margin-left: 6.5%;">
+            <div style="display: flex; align-items: center;">
+                <label class="k-label k-form-label" style="margin-right: 5px;">Filter</label>
+                <TelerikTextBox @bind-Value="@FilterValue" Width="50%"></TelerikTextBox>
+                <span style="width: 5px;"></span>
+                <TelerikButton OnClick="@OnFilterClick" ThemeColor="primary" Size="@ThemeConstants.Button.Size.Medium">Apply</TelerikButton>
+            </div>
+            <TelerikButton OnClick="@NavToAddTask" ThemeColor="primary">Add Task</TelerikButton>
+        </div>
+        <br />
+        <div style="display: flex; justify-content: space-around;">
+            <TelerikCard>
+                <div style="padding: 10px">
+                    <TicketColumn Data="@TodoTickets" Title="To do"></TicketColumn>
+                </div>
+            </TelerikCard>
+            <TelerikCard>
+                <div style="padding: 10px">
+                    <TicketColumn Data="@ProgressTickets" Title="In progress"></TicketColumn>
+                </div>
+            </TelerikCard>
+            <TelerikCard>
+                <div style="padding: 10px">
+                    <TicketColumn Data="@DoneTickets" Title="Done"></TicketColumn>
+                </div>
+            </TelerikCard>
+        </div>
     </div>
-    <div>
-        <TicketColumn Data="@ProgressTickes" Title="In progress"></TicketColumn>
-    </div>
-    <div>
-        <TicketColumn Data="@DoneTickets" Title="Done"></TicketColumn>
-    </div>
-</div>
-<br />
+</TelerikCard>
 
-@helloString
-
-Welcome to your new app.
 
 @code {
-    MarkupString helloString;
     [CascadingParameter] private GlobalAppState? State { get; set; }
-    public IEnumerable<GetTaskResponse>? TodoTickets { get; set; }
-    public IEnumerable<GetTaskResponse>? ProgressTickes { get; set; }
-    public IEnumerable<GetTaskResponse>? DoneTickets { get; set; }
+    private IEnumerable<GetTaskResponse>? TodoTickets { get; set; }
+    private IEnumerable<GetTaskResponse>? ProgressTickets { get; set; }
+    private IEnumerable<GetTaskResponse>? DoneTickets { get; set; }
+    private string FilterValue = "";
+    private int counter = 0;
+
 
     protected override async Task OnInitializedAsync()
     {
-        MyService.RefreshRequested += RefreshState;
+        if (counter < 1)
+        {
+            MyService.RefreshRequested += RefreshState;
+            counter++;
+        }
+        
         try
         {
             if (State == null)
@@ -48,11 +62,9 @@ Welcome to your new app.
 
             if (State.IsLoggedIn)
             {
-                await State.GetTasksAsync();
+                await State.FetchTasksAsync();
 
-                TodoTickets = State.todoTickets;
-                ProgressTickes = State.progressTickets;
-                DoneTickets = State.doneTickets;
+                (TodoTickets, ProgressTickets, DoneTickets) = State.GetTasks();
             }
         }
         catch (NullReferenceException ex)
@@ -70,9 +82,7 @@ Welcome to your new app.
                 throw new NullReferenceException("State is null in Home in RefreshState");
             }
 
-            TodoTickets = State.todoTickets;
-            ProgressTickes = State.progressTickets;
-            DoneTickets = State.doneTickets;
+            (TodoTickets, ProgressTickets, DoneTickets) = State.GetTasks();
 
             this.StateHasChanged();
         }
@@ -82,24 +92,24 @@ Welcome to your new app.
         }
     }
 
-    void SayHelloHandler()
-    {
-        string msg = string.Format("Hello from <strong>Telerik Blazor</strong> at {0}.<br /> Now you can use C# to write front-end!", DateTime.Now);
-        helloString = new MarkupString(msg);
-    }
-
-    void NavToLogin()
-    {
-        navigation.NavigateTo("Login");
-    }
-
-    void NavToSignup()
-    {
-        navigation.NavigateTo("Signup");
-    }
-
     void NavToAddTask()
     {
         navigation.NavigateTo("AddTask");
+    }
+
+    void OnFilterClick()
+    {
+        try
+        {
+            if (State == null)
+            {
+                throw new NullReferenceException("State is null in Home page");
+            }
+            (TodoTickets, ProgressTickets, DoneTickets) = State.GetTasks(FilterValue);
+        }
+        catch (NullReferenceException ex)
+        {
+            Console.WriteLine(ex);
+        }
     }
 }

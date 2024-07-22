@@ -2,6 +2,7 @@
 @inject NavigationManager Navigation
 @inject DetailsRefreshService MyService
 
+<PageTitle>@Model.Subject</PageTitle>
 <TelerikGridLayout>
     <GridLayoutColumns>
         <GridLayoutColumn></GridLayoutColumn>
@@ -83,12 +84,18 @@
     private List<Status> statuses { get; set; } = [Status.ToDo, Status.InProgress, Status.Done];
     private bool TaskLoaderVisible { get; set; } = false;
     private bool CategoryLoaderVisible { get; set; } = false;
+    private int counter = 0;
 
     protected override void OnInitialized()
     {
         try
         {
-            MyService.RefreshRequested += RefreshState;
+            if (counter < 1)
+            {
+                MyService.RefreshRequested += RefreshState;
+                counter++;
+            }
+            
             if (State == null)
             {
                 throw new NullReferenceException("State is null in Details");
