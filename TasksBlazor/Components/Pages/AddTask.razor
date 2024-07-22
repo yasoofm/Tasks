@@ -1,7 +1,7 @@
 ﻿@page "/AddTask"
 @inject NavigationManager Navigation
 
-<TelerikForm Model="@Model" Width="30%" OnValidSubmit="@HandleValidSubmit">
+<TelerikForm Model="@Model" Width="50%" OnValidSubmit="@HandleValidSubmit">
     <FormValidation>
         <DataAnnotationsValidator></DataAnnotationsValidator>
     </FormValidation>
@@ -47,30 +47,11 @@
 
 
 @code {
-    [CascadingParameter] private GlobalAppState? State { get; set; }
-    [Parameter] public required int Id { get; set; }
-    private UpdateTaskRequest? Model { get; set; }
+    [CascadingParameter] GlobalAppState? State { get; set; }
+    private AddTaskRequest? Model { get; set; } = new AddTaskRequest();
     private List<string> priorities { get; set; } = [Priority.Low.ToString(), Priority.Medium.ToString(), Priority.High.ToString()];
     private List<Status> statuses { get; set; } = [Status.ToDo, Status.InProgress, Status.Done];
-    private bool LoaderVisible { get; set; } = false;
-
-    protected override void OnInitialized()
-    {
-        try
-        {
-            if (State == null)
-            {
-                throw new NullReferenceException("State is null in Details");
-            }
-            Model = State.GetTaskModel(Id);
-        }
-        catch (NullReferenceException ex)
-        {
-            Console.WriteLine(ex);
-        }
-
-        base.OnInitialized();
-    }
+    private bool LoaderVisible { set; get; } = false;
 
     async void HandleValidSubmit()
     {
@@ -81,27 +62,21 @@
 
             if (State == null)
             {
-                throw new NullReferenceException("GlobalAppState is null in Details page");
+                throw new NullReferenceException("State is null in AddTask page");
             }
 
-            var client = State!.CreateClient();
-            var response = await client.PatchAsJsonAsync($"Tasks/{Model!.Id}", Model);
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
-                LoaderVisible = false;
-                StateHasChanged();
-                return;
-            }
+            var client = State.CreateClient();
+            var response = await client.PostAsJsonAsync("Tasks", Model);
 
-            if (!response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode)
             {
+                var result = await response.Content.ReadFromJsonAsync<GetTaskResponse>();
+                State.AddTicket(result!);
                 LoaderVisible = false;
                 StateHasChanged();
-                return;
+                Navigation.NavigateTo("/");
             }
-            LoaderVisible = false;
-            StateHasChanged();
-            Navigation.NavigateTo("/");
+            
         }
         catch (NullReferenceException ex)
         {
@@ -114,6 +89,12 @@
             LoaderVisible = false;
             StateHasChanged();
             Console.WriteLine(ex);
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            LoaderVisible = false;
+            StateHasChanged();
+            Console.WriteLine("AddTask response serialization failed\n" + ex);
         }
     }
 }

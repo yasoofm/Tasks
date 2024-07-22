@@ -35,7 +35,8 @@ namespace TasksAPI.Controllers
         {
             using(var dbContext = _dbContext)
             {
-                var converted = Enum.TryParse(taskRequest.Priority, out Priority priority);
+                var convertedPriority = Enum.TryParse(taskRequest.Priority, out Priority priority);
+                var convertedStatus = Enum.TryParse(taskRequest.Status, out Status status);
                 
                 var creatorClaim = User.FindFirst(Constants.UserIdClaim);
                 if (creatorClaim == null)
@@ -70,8 +71,8 @@ namespace TasksAPI.Controllers
                 {
                     Subject = taskRequest.Subject,
                     Description = taskRequest.Description,
-                    Status = Status.ToDo,
-                    Priority = converted ? priority : Priority.Low,
+                    Status = convertedStatus ? status : Status.ToDo,
+                    Priority = convertedPriority ? priority : Priority.Low,
                     User = user,
                     UserId = user.Id,
                     CreatedBy = creator,

@@ -15,10 +15,10 @@ namespace TasksBlazor.Models
         public int? UserId { get; set; }
         public bool IsLoggedIn => Token != null && Token != "";
         public bool IsAdmin { get; set; } = false;
-        public IEnumerable<GetTaskResponse> tickets { get; set; } = new List<GetTaskResponse>();
-        public IEnumerable<GetTaskResponse> todoTickets { get; set; } = new List<GetTaskResponse>();
-        public IEnumerable<GetTaskResponse> progressTickets { get; set; } = new List<GetTaskResponse>();
-        public IEnumerable<GetTaskResponse> doneTickets { get; set; } = new List<GetTaskResponse>();
+        public List<GetTaskResponse> tickets { get; set; } = new List<GetTaskResponse>();
+        public List<GetTaskResponse> todoTickets { get; set; } = new List<GetTaskResponse>();
+        public List<GetTaskResponse> progressTickets { get; set; } = new List<GetTaskResponse>();
+        public List<GetTaskResponse> doneTickets { get; set; } = new List<GetTaskResponse>();
 
         public void SaveToken(string token)
         {
@@ -74,9 +74,9 @@ namespace TasksBlazor.Models
 
                 tickets = result;
 
-                todoTickets = result.Where(x => x.Status == "ToDo");
-                progressTickets = result.Where(x => x.Status == "InProgress");
-                doneTickets = result.Where(x => x.Status == "Done");
+                todoTickets = result.Where(x => x.Status == "ToDo").ToList();
+                progressTickets = result.Where(x => x.Status == "InProgress").ToList();
+                doneTickets = result.Where(x => x.Status == "Done").ToList();
             }
             catch (BadHttpRequestException ex)
             {
@@ -103,9 +103,9 @@ namespace TasksBlazor.Models
                 }
                 ticket = updatedTicket;
 
-                todoTickets = tickets.Where(x => x.Status == "ToDo");
-                progressTickets = tickets.Where(x => x.Status == "InProgress");
-                doneTickets = tickets.Where(x => x.Status == "Done");
+                todoTickets = tickets.Where(x => x.Status == "ToDo").ToList();
+                progressTickets = tickets.Where(x => x.Status == "InProgress").ToList();
+                doneTickets = tickets.Where(x => x.Status == "Done").ToList();
             }
             catch (NullReferenceException ex)
             {
@@ -198,6 +198,15 @@ namespace TasksBlazor.Models
             {
                 Console.WriteLine(ex);
             }
+        }
+
+        public void AddTicket(GetTaskResponse ticket)
+        {
+            tickets.Add(ticket);
+
+            todoTickets = tickets.Where(x => x.Status == "ToDo").ToList();
+            progressTickets = tickets.Where(x => x.Status == "InProgress").ToList();
+            doneTickets = tickets.Where(x => x.Status == "Done").ToList();
         }
     }
 }

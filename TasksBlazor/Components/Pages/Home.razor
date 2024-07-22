@@ -9,6 +9,7 @@
 <TelerikButton OnClick="@SayHelloHandler" ThemeColor="primary">Say Hello</TelerikButton>
 <TelerikButton OnClick="@NavToLogin" ThemeColor="primary">Login</TelerikButton>
 <TelerikButton OnClick="@NavToSignup" ThemeColor="primary">Signup</TelerikButton>
+<TelerikButton OnClick="@NavToAddTask" ThemeColor="primary">Add Task</TelerikButton>
 <br />
 <br />
 <div style="display: flex; justify-content: space-around;">
@@ -95,5 +96,10 @@ Welcome to your new app.
     void NavToSignup()
     {
         navigation.NavigateTo("Signup");
+    }
+
+    void NavToAddTask()
+    {
+        navigation.NavigateTo("AddTask");
     }
 }
