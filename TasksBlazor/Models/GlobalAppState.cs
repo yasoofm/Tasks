@@ -37,12 +37,6 @@ namespace TasksBlazor.Models
             Token = token;
         }
 
-        public void RemoveToken()
-        {
-            Token = "";
-            IsAdmin = false;
-        }
-
         public HttpClient CreateClient()
         {
             var client = new HttpClient();
