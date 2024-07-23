@@ -3,6 +3,14 @@
 @inject HomeRefreshService MyService
 
 <PageTitle>Home</PageTitle>
+
+<div style="display: flex; align-items: center;">
+    <label class="k-label k-form-label" style="margin-right: 5px;">Search</label>
+    <TelerikTextBox @bind-Value="@username" Width="10%"></TelerikTextBox>
+    <span style="width: 5px;"></span>
+    <TelerikButton OnClick="@OnSearchClick" ThemeColor="primary" Size="@ThemeConstants.Button.Size.Medium">Apply</TelerikButton>
+</div>
+<br/>
 <TelerikCard>
     <div style="padding: 15px;">
         <div style="display: flex; justify-content: space-between; margin-right: 6.5%; margin-left: 6.5%;">
@@ -43,7 +51,7 @@
     private IEnumerable<GetTaskResponse>? DoneTickets { get; set; }
     private string FilterValue = "";
     private int counter = 0;
-
+    private string username = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -52,7 +60,7 @@
             MyService.RefreshRequested += RefreshState;
             counter++;
         }
-        
+
         try
         {
             if (State == null)
@@ -106,6 +114,29 @@
                 throw new NullReferenceException("State is null in Home page");
             }
             (TodoTickets, ProgressTickets, DoneTickets) = State.GetTasks(FilterValue);
+        }
+        catch (NullReferenceException ex)
+        {
+            Console.WriteLine(ex);
+        }
+    }
+
+    async void OnSearchClick()
+    {
+        try
+        {
+            if (State == null)
+            {
+                throw new NullReferenceException("State is null in Home page");
+            }
+
+            if (State.IsLoggedIn)
+            {
+                await State.FetchTasksAsync(username);
+                (TodoTickets, ProgressTickets, DoneTickets) = State.GetTasks();
+            }
+
+            StateHasChanged();
         }
         catch (NullReferenceException ex)
         {

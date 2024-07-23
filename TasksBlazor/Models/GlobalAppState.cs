@@ -30,7 +30,7 @@ namespace TasksBlazor.Models
             //    CookieAuthenticationDefaults.AuthenticationScheme);
             Username = jwtSecurityToken.Claims.FirstOrDefault(p => p.Type == Constants.UserIdClaim)?.Value ?? "no user claim";
             UserId = int.Parse(jwtSecurityToken.Claims.FirstOrDefault(p => p.Type == Constants.UserIdClaim)?.Value ?? "-1");
-            if (jwtSecurityToken.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Role)?.Value == "Admin")
+            if (jwtSecurityToken.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Role)?.Value == "admin")
             {
                 IsAdmin = true;
             }
@@ -58,28 +58,57 @@ namespace TasksBlazor.Models
                 var response = await client.GetAsync("Tasks");
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new BadHttpRequestException("GetTasksAsync failed in GlobalAppState");
+                    throw new BadHttpRequestException("FetchTasksAsync failed in GlobalAppState");
                 }
 
                 var result = await response.Content.ReadFromJsonAsync<List<GetTaskResponse>>();
-                if (result == null)
-                {
-                    throw new InvalidCastException("Serialization failed in GetTasksAsync in GlobalAppState");
-                }
 
-                tickets = result;
+                tickets = result!;
 
-                todoTickets = result.Where(x => x.Status == "ToDo").ToList();
-                progressTickets = result.Where(x => x.Status == "InProgress").ToList();
-                doneTickets = result.Where(x => x.Status == "Done").ToList();
+                todoTickets = tickets.Where(x => x.Status == "ToDo").ToList();
+                progressTickets = tickets.Where(x => x.Status == "InProgress").ToList();
+                doneTickets = tickets.Where(x => x.Status == "Done").ToList();
             }
             catch (BadHttpRequestException ex)
             {
                 Console.WriteLine(ex);
             }
-            catch (InvalidCastException ex)
+            catch (System.Text.Json.JsonException ex)
+            {
+                Console.WriteLine("Serialization failed in FetchTasksAsync in GlobalAppState\n" + ex);
+            }
+            catch (HttpRequestException ex)
             {
                 Console.WriteLine(ex);
+            }
+        }
+
+        public async Task FetchTasksAsync(string username)
+        {
+            try
+            {
+                var client = CreateClient();
+                var response = await client.GetAsync($"Tasks/GetUserTasks/{username}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new BadHttpRequestException($"Fetch tasks for {username} is not successful in GlobalAppState");
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<List<GetTaskResponse>>();
+
+                tickets = result!;
+
+                todoTickets = tickets.Where(x => x.Status == "ToDo").ToList();
+                progressTickets = tickets.Where(x => x.Status == "InProgress").ToList();
+                doneTickets = tickets.Where(x => x.Status == "Done").ToList();
+            }
+            catch (BadHttpRequestException ex)
+            {
+                Console.WriteLine(ex);
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                Console.WriteLine("Serialization failed in FetchTasksAsync in GlobalAppState\n" + ex);
             }
             catch (HttpRequestException ex)
             {

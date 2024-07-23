@@ -15,6 +15,7 @@ namespace TasksBlazor.Models.Requests
         public string? ModifiedBy { get; set; }
         [Editable(false)]
         public string? CreatedBy { get; set; }
+        [Display(Name = "Assigned to")]
         public string? AssignedTo { get; set; }
         public List<GetCategoryResponse> Categories { get; set; } = new List<GetCategoryResponse>();
     }

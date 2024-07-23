@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
@@ -19,7 +20,7 @@ namespace TasksAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "user, admin")]
     public class TasksController : ControllerBase
     {
         private readonly TasksDBContext _dbContext;
@@ -33,11 +34,11 @@ namespace TasksAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<GetTaskResponse>> AddTask(AddTaskRequest taskRequest)
         {
-            using(var dbContext = _dbContext)
+            using (var dbContext = _dbContext)
             {
                 var convertedPriority = Enum.TryParse(taskRequest.Priority, out Priority priority);
                 var convertedStatus = Enum.TryParse(taskRequest.Status, out Status status);
-                
+
                 var creatorClaim = User.FindFirst(Constants.UserIdClaim);
                 if (creatorClaim == null)
                 {
@@ -102,7 +103,7 @@ namespace TasksAPI.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<GetTaskResponse>> GetTask(int id)
         {
-            using(var dbContext = _dbContext)
+            using (var dbContext = _dbContext)
             {
                 var task = await dbContext.Tasks
                     .Include(x => x.CreatedBy)
@@ -180,7 +181,7 @@ namespace TasksAPI.Controllers
         [HttpPatch("{id}")]
         public async Task<IActionResult> PatchTask(int id, EditTaskRequest request)
         {
-            using(var dbContext = _dbContext)
+            using (var dbContext = _dbContext)
             {
                 var task = await dbContext.Tasks.SingleOrDefaultAsync(x => x.Id == id);
                 if (task == null)
@@ -191,10 +192,17 @@ namespace TasksAPI.Controllers
                 var userIdClaim = User.FindFirst(Constants.UserIdClaim);
                 if (userIdClaim == null)
                 {
-                    return NotFound("Claim not found");
+                    return NotFound("User id claim not found");
                 }
-                
                 var userId = int.Parse(userIdClaim.Value);
+
+                var roleClaim = User.FindFirst(ClaimTypes.Role);
+                if (roleClaim == null)
+                {
+                    return NotFound("Role claim not found");
+                }
+                var role = roleClaim.Value;
+
                 var modifier = await dbContext.Users.FindAsync(userId);
                 if (modifier == null)
                 {
@@ -216,7 +224,7 @@ namespace TasksAPI.Controllers
                 if (request.AssignedTo != null)
                 {
                     var assignedTo = await dbContext.Users.SingleOrDefaultAsync(x => x.Username == request.AssignedTo);
-                    if(assignedTo == null)
+                    if (assignedTo == null)
                     {
                         return NotFound("Assigned to not found");
                     }
@@ -234,7 +242,7 @@ namespace TasksAPI.Controllers
                     }
                 }
 
-                if (request.Status != null)
+                if ((userId == task.UserId || role == "admin") && request.Status != null)
                 {
                     var isConverted = Enum.TryParse(request.Status, out Status status);
                     if (isConverted)
@@ -252,7 +260,7 @@ namespace TasksAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(int id)
         {
-            using(var dbContext = _dbContext)
+            using (var dbContext = _dbContext)
             {
                 var task = await _dbContext.Tasks.FindAsync(id);
                 if (task == null)
@@ -271,7 +279,7 @@ namespace TasksAPI.Controllers
         [HttpPatch("[action]/{id}")]
         public async Task<IActionResult> Move(int id, MoveTaskRequest request)
         {
-            using( var dbContext = _dbContext)
+            using (var dbContext = _dbContext)
             {
                 var task = await dbContext.Tasks.FindAsync(id);
                 if (task == null)
@@ -279,15 +287,85 @@ namespace TasksAPI.Controllers
                     return NotFound("Task not found");
                 }
 
+                var roleClaim = User.FindFirst(ClaimTypes.Role);
+                if (roleClaim == null)
+                {
+                    return NotFound("Role claim not found");
+                }
+                var role = roleClaim.Value;
+
+                var userIdClaim = User.FindFirst(Constants.UserIdClaim);
+                if (userIdClaim == null)
+                {
+                    return NotFound("User id claim not found");
+                }
+                var userId = int.Parse(userIdClaim.Value);
+
+                var user = await dbContext.Users.FindAsync(userId);
+                if (user == null)
+                {
+                    return NotFound("User not found");
+                }
+
+                if (user.Id != task.UserId && role != "admin")
+                {
+                    return BadRequest("only admin or assigned user can move tasks");
+                }
+
                 var converted = Enum.TryParse(request.Status, out Status status);
-                
+
                 if (converted)
                 {
                     task.Status = status;
                 }
-                
+
                 await dbContext.SaveChangesAsync();
                 return NoContent();
+            }
+        }
+
+        // GET: api/Tasks/GetUserTasks/user
+        [HttpGet("[action]/{username}")]
+        public async Task<ActionResult<List<GetTaskResponse>>> GetUserTasks(string username)
+        {
+            using (var dbContext = _dbContext)
+            {
+                if (!dbContext.Users.Any(x => x.Username == username))
+                {
+                    return NoContent();
+                }
+
+                var usernameClaim = User.FindFirst(Constants.UsernameClaim);
+                if (usernameClaim == null)
+                {
+                    return NotFound("Claim not found");
+                }
+                var creator = usernameClaim.Value;
+
+                var tasks = await dbContext.Tasks
+                    .Include(x => x.User)
+                    .Include(x => x.ModifiedBy)
+                    .Include(x => x.User)
+                    .Include(x => x.Categories)
+                    .Where(x => x.User.Username == username).Select(x => new GetTaskResponse
+                    {
+                        AssignedTo = x.User.Username,
+                        CreatedBy = x.CreatedBy.Username,
+                        Id = x.Id,
+                        ModifiedBy = x.ModifiedBy.Username,
+                        Priority = x.Priority.ToString(),
+                        Status = x.Status.ToString(),
+                        Subject = x.Subject,
+                        Description = x.Description,
+                        Categories = x.Categories.Select(x => new GetCategoryResponse
+                        {
+                            Color = x.Color,
+                            Id = x.Id,
+                            Name = x.Name,
+                        }).ToList(),
+                    }).ToListAsync();
+
+                return Ok(tasks);
             }
         }
     }
