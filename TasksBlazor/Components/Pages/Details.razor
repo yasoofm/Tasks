@@ -167,7 +167,6 @@
             {
                 var result = await response.Content.ReadFromJsonAsync<GetCategoryResponse>();
                 State.AddCategory(Id, result!);
-                OnInitialized();
             }
             CategoryLoaderVisible = false;
             StateHasChanged();
@@ -188,7 +187,6 @@
 
     void RefreshState()
     {
-        OnInitialized();
         StateHasChanged();
     }
 }

@@ -26,8 +26,6 @@ namespace TasksBlazor.Models
             var handler = new JwtSecurityTokenHandler();
             var jwtSecurityToken = handler.ReadJwtToken(token);
 
-            //var claimsIdentity = new ClaimsIdentity(jwtSecurityToken.Claims,
-            //    CookieAuthenticationDefaults.AuthenticationScheme);
             Username = jwtSecurityToken.Claims.FirstOrDefault(p => p.Type == Constants.UserIdClaim)?.Value ?? "no user claim";
             UserId = int.Parse(jwtSecurityToken.Claims.FirstOrDefault(p => p.Type == Constants.UserIdClaim)?.Value ?? "-1");
             if (jwtSecurityToken.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Role)?.Value == "admin")

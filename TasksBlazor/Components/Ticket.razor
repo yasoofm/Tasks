@@ -14,13 +14,16 @@
             </div>  
         </CardBody>
         <CardActions Orientation="@CardOrientation.Horizontal" Layout="@CardActionsLayout.Stretch">
-            <TelerikButton FillMode="@ThemeConstants.Button.FillMode.Solid" OnClick="@OnClickHandler">Details</TelerikButton>
-            <TelerikDropDownList Data="@Statuses"
-                                 @bind-Value="Data.Status"
-                                 TextField="@nameof(Status.Name)"
-                                 ValueField="@nameof(Status.Value)"
-                                 OnChange="@OnChangeHandle">
-            </TelerikDropDownList>
+            <div style="display: flex; flex-direction: column;">
+                <TelerikRadioGroup Id="stat" Data="@Statuses"
+                                   @bind-Value="@Data!.Status"
+                                   TextField="@nameof(Status.Name)"
+                                   ValueField="@nameof(Status.Value)"
+                                   Layout="RadioGroupLayout.Horizontal"
+                                   OnChange="@OnChangeHandler">
+                </TelerikRadioGroup>
+                <TelerikButton FillMode="@ThemeConstants.Button.FillMode.Solid" OnClick="@OnClickHandler">Details</TelerikButton>
+            </div>
         </CardActions>
         <CardFooter>
             <Tags Data="Data.Categories" TaskId="Data.Id"></Tags>
@@ -32,7 +35,7 @@
 @code {
     [Parameter] public required GetTaskResponse Data { get; set; }
     [CascadingParameter] private GlobalAppState? State { get; set; }
-    private IEnumerable<Status> Statuses { get; set; } = [ Status.ToDo, Status.Done, Status.InProgress ];
+    private IEnumerable<Status> Statuses { get; set; } = [Status.ToDo, Status.InProgress, Status.Done];
     private string? lastValue { get; set; }
 
     void OnClickHandler()
@@ -40,14 +43,13 @@
         Navigation.NavigateTo($"/Details/{Data.Id}");
     }
 
-    async void OnChangeHandle(object selected)
+    async void OnChangeHandler(object selected)
     {
-        var currentValue = selected as string; 
+        var currentValue = selected as string;
         if (currentValue == lastValue)
         {
             return;
         }
-
         try
         {
             if (State == null)

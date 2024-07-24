@@ -9,6 +9,8 @@
     <TelerikTextBox @bind-Value="@username" Width="10%"></TelerikTextBox>
     <span style="width: 5px;"></span>
     <TelerikButton OnClick="@OnSearchClick" ThemeColor="primary" Size="@ThemeConstants.Button.Size.Medium">Apply</TelerikButton>
+    <span style="width: 5px;"></span>
+    <TelerikLoader Visible="@LoaderVisible"></TelerikLoader>
 </div>
 <br/>
 <TelerikCard>
@@ -52,6 +54,7 @@
     private string FilterValue = "";
     private int counter = 0;
     private string username = "";
+    private bool LoaderVisible { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -125,6 +128,9 @@
     {
         try
         {
+            LoaderVisible = true;
+            StateHasChanged();
+
             if (State == null)
             {
                 throw new NullReferenceException("State is null in Home page");
@@ -136,10 +142,13 @@
                 (TodoTickets, ProgressTickets, DoneTickets) = State.GetTasks();
             }
 
+            LoaderVisible = false;
             StateHasChanged();
         }
         catch (NullReferenceException ex)
         {
+            LoaderVisible = false;
+            StateHasChanged();
             Console.WriteLine(ex);
         }
     }

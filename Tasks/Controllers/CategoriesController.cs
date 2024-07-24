@@ -12,7 +12,7 @@ namespace TasksAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "user, admin")]
+    [Authorize]
     public class CategoriesController : ControllerBase
     {
         private readonly TasksDBContext _dbContext;
